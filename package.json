@@ -1,0 +1,7 @@
+{
+    "name": "imgetter2",
+    "main": "index.html",
+    "dependencies": {
+        "puppeteer": "^10.1.0"
+    }
+}

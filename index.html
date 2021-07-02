@@ -1,0 +1,87 @@
+﻿<!DOCTYPE html>
+<html>
+  <head>
+    <title>イメージを獲得者２：電撃のブガロー</title>
+  </head>
+  <body>
+    <script>
+        const puppeteer = require('puppeteer')
+        const fs = require("fs")
+        const https = require('https');
+    </script>
+    <h1>イメージを獲得者２：電撃のブガロー</h1>
+    <form>
+        <label for="site_url">サイトアドレス</label><br>
+        <input type="text" name="site_url" id="site_url"><br>
+        
+    </form>
+    <button onclick="getImages()">獲得</button>
+
+    <h2 id="seikou" style="visibility: hidden;"> イメージを獲得することができました。 </h2>
+    <h2 id="shippai" style="visibility: hidden; color:red"> イメージを獲得することが失敗しました。 </h2>
+
+    <script>
+        async function getImages() {
+            try {
+                document.getElementById("seikou").style.visibility = "hidden"
+                document.getElementById("shippai").style.visibility = "hidden"
+                const URL = document.getElementById("site_url").value;
+                const browser = await puppeteer.launch()
+                const page = await browser.newPage()
+                console.log(URL)
+                await page.goto(URL)
+                await page.click("div.preview")
+                await page.waitForTimeout(300)
+                const images = [];
+                const img_no = await page.evaluate(() => {
+
+                    let srcs = document.querySelectorAll(".J-side-list li a").length
+                    
+                    return srcs;
+                });
+                if(img_no < 1){
+                    document.getElementById("shippai").style.visibility = "visible"
+                }
+                for(let i=0; i<img_no;i++){
+                    if(i!=0){
+                        let selector = ".J-side-list li a:nth-child("+ (i  + 1)+")"
+                        await page.click(selector)
+
+                    }
+                    const issueSrcs = await page.evaluate(() => {
+
+                        let srcs = Array.from(
+                        document.querySelectorAll("#popup-big-img")
+                        ).map((image) => image.getAttribute("src"));
+                        return srcs;
+                    });
+            
+                    images.push(issueSrcs)
+                }
+
+                console.log(images)
+
+                images.forEach((url , index) => {
+                    https.get("https:" + url, res => {
+                        let name = URL.substring(20,31)
+                        console.log(name)
+                        const stream = fs.createWriteStream(`D:/imagegetter2/download/${name}${index}.png`);
+                        res.pipe(stream);
+                        stream.on('finish', () => {
+                            stream.close();
+                        })
+                    })
+                });
+                await browser.close()
+                document.getElementById("seikou").style.visibility = "visible"
+                document.getElementById("site_url").value = ""
+                
+
+            } catch (error) {
+                console.error(error)
+                document.getElementById("shippai").style.visibility = "visible"
+            }
+        }
+    </script>
+  </body>
+</html>
